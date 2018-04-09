@@ -43,33 +43,15 @@ class FaceDetection(QDialog):
         self.timer.start(5) # while 5 milisecond is going to call updateFrame()
 
     def updateFrame(self):
-        ret, self.image = self.cam.read()
-        ####################
         ret, self.imageDetection = self.cam.read()
         self.gray = cv2.cvtColor(self.imageDetection, cv2.COLOR_BGR2GRAY)
         self.faces = self.faceCascade.detectMultiScale(self.gray, 1.2, 5)
-        ####################
 
-        self.image = cv2.flip(self.image,1)
-        self.displayVideo(self.image,1)
-
-    def stopCam(self):
-        self.timer.stop()
-
-    def displayVideo(self,image,window=1):
-        qformat = QImage.Format_Indexed8
-        if len(image.shape)==3: # Shape
-            if image.shape[2] == 4:
-                qformat = QImage.Format_RGBA8888
-            else:
-                qformat = QImage.Format_RGB888
-
-        outVideo = QImage(image,image.shape[1],image.shape[0],image.strides[0],qformat)
-        outVideo = outVideo.rgbSwapped()
-
-        #############################
+        ## Detect Faces
         for (x, y, w, h) in self.faces:
             cv2.rectangle(self.imageDetection, (x, y), (x + w, y + h), (225, 0, 0), 2)
+            
+            ## Predict returns an Id and confidence value
             [Id, conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
             if (conf > 50):
                 if (Id == 1):
@@ -81,7 +63,23 @@ class FaceDetection(QDialog):
             cv2.putText(self.imageDetection, str(Id), (x, y + h), self.fontface,
                         self.fontscale, self.fontcolor)
 
-        #################################
+        self.displayVideo(self.imageDetection,1)
+
+    def stopCam(self):
+        self.timer.stop()
+
+    def displayVideo(self,imageDetection,window=1):
+        qformat = QImage.Format_Indexed8
+        if len(imageDetection.shape)==3: # Shape
+            if imageDetection.shape[2] == 4:
+                qformat = QImage.Format_RGBA8888
+            else:
+                qformat = QImage.Format_RGB888
+
+        outVideo = QImage(imageDetection,imageDetection.shape[1],imageDetection.shape[0],imageDetection.strides[0],qformat)
+        outVideo = outVideo.rgbSwapped()
+
+
         if window == 1:
             self.frameVideo.setPixmap(QPixmap.fromImage(outVideo))
             self.frameVideo.setScaledContents(True)
