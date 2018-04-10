@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import PyQt5
+import sqlite3
+
+
+
 import sys
 from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtGui import QImage, QPixmap
@@ -13,6 +17,8 @@ class FaceDetection(QDialog):
         super(FaceDetection, self).__init__()
         loadUi('faceDetection.ui',self)
 
+        self.conn = sqlite3.connect('faceDatabase.db')
+
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read('trainner/trainner.yml')
         self.cascadePath = "haarcascade_frontalface_default.xml"
@@ -24,12 +30,25 @@ class FaceDetection(QDialog):
         self.fontcolor = (0, 0, 255)
         self.font = cv2.FONT_HERSHEY_SIMPLEX
 
-        # Initialize  BuToons and label
-        self.image = None
+        # Initialize  Buttons and label
+
         self.imageDetection = None
-        self.start.clicked.connect(self.startCam)
-        self.stop.clicked.connect(self.stopCam)
+        #self.start.clicked.connect(self.startCam)
+        #self.stop.clicked.connect(self.stopCam)
         self.startCam()
+
+    def getProfile(Id):
+        
+        cmd = "SELECT * FROM people WHERE Id=" + str(Id)
+        cursor = connection.execute(cmd)
+        profile = None
+        for row in cursor:
+            profile = row
+        connection.close()
+        return profile
+
+
+
 
     @pyqtSlot()
     def startCam(self):
@@ -40,7 +59,7 @@ class FaceDetection(QDialog):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.updateFrame)
-        self.timer.start(5) # while 5 milisecond is going to call updateFrame()
+        self.timer.start(5) # while 5 mil second is going to call updateFrame()
 
     def updateFrame(self):
         ret, self.imageDetection = self.cam.read()
@@ -50,7 +69,7 @@ class FaceDetection(QDialog):
         ## Detect Faces
         for (x, y, w, h) in self.faces:
             cv2.rectangle(self.imageDetection, (x, y), (x + w, y + h), (225, 0, 0), 2)
-            
+
             ## Predict returns an Id and confidence value
             [Id, conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
             if (conf > 50):
