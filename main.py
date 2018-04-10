@@ -18,6 +18,7 @@ class FaceDetection(QDialog):
         loadUi('faceDetection.ui',self)
 
         self.conn = sqlite3.connect('faceDatabase.db')
+        self.c = self.conn.cursor()
 
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read('trainner/trainner.yml')
@@ -36,9 +37,30 @@ class FaceDetection(QDialog):
         #self.start.clicked.connect(self.startCam)
         #self.stop.clicked.connect(self.stopCam)
         self.startCam()
+        self.createTable()
+        self.dynamicDataEntry()
+
+    def createTable(self):
+        self.c.execute('CREATE TABLE IF NOT EXISTS people(Id REAL, name TEXT)')
+
+
+    def dynamicDataEntry(self):
+        self.userId = 1
+        self.userName = "Felipe"
+        self.c.execute("INSERT INTO people (Id,name) VALUES(?,?)", (self.userId, self.userName))
+        self.conn.commit()
+        self.c.close()
+        self.conn.close()
+
+    def readFromDB(self):
+
 
     def getProfile(Id):
-        
+        pass
+
+
+
+        ##connection = sqlite3.connect('faceDatabase.db')
         cmd = "SELECT * FROM people WHERE Id=" + str(Id)
         cursor = connection.execute(cmd)
         profile = None
@@ -72,6 +94,18 @@ class FaceDetection(QDialog):
 
             ## Predict returns an Id and confidence value
             [Id, conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
+
+            self.profile = self.getProfile(Id)
+            if (self.profile != None and conf > 50):
+                cv2.putText(self.imageDetection, str(self.profile[1]), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
+            else:
+                Id = "Unknown"
+                cv2.putText(self.imageDetectionim, str(Id), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
+
+
+
+           ###########################
+
             if (conf > 50):
                 if (Id == 1):
                     Id = "Felipe"
@@ -81,7 +115,7 @@ class FaceDetection(QDialog):
                 Id = "Unknown"
             cv2.putText(self.imageDetection, str(Id), (x, y + h), self.fontface,
                         self.fontscale, self.fontcolor)
-
+            #############
         self.displayVideo(self.imageDetection,1)
 
     def stopCam(self):
