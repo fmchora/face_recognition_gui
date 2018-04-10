@@ -17,9 +17,6 @@ class FaceDetection(QDialog):
         super(FaceDetection, self).__init__()
         loadUi('faceDetection.ui',self)
 
-        self.conn = sqlite3.connect('faceDatabase.db')
-        self.c = self.conn.cursor()
-
         self.recognizer = cv2.face.LBPHFaceRecognizer_create()
         self.recognizer.read('trainner/trainner.yml')
         self.cascadePath = "haarcascade_frontalface_default.xml"
@@ -37,9 +34,13 @@ class FaceDetection(QDialog):
         #self.start.clicked.connect(self.startCam)
         #self.stop.clicked.connect(self.stopCam)
         self.startCam()
-        self.createTable()
-        self.dynamicDataEntry()
-        self.readFromDB()
+        #self.conn = sqlite3.connect('faceDatabase.db')
+        #self.c = self.conn.cursor()
+        #self.createTable()
+        #self.dynamicDataEntry()
+        #self.readFromDB()
+
+
 
     def createTable(self):
         self.c.execute('CREATE TABLE IF NOT EXISTS people(Id REAL, name TEXT)')
@@ -74,19 +75,13 @@ class FaceDetection(QDialog):
 
 
     def getProfile(self,Id):
-        self.c.close()
-        self.conn.close()
-
-
-
-        ##connection = sqlite3.connect('faceDatabase.db')
-        cmd = "SELECT * FROM people WHERE Id=" + str(Id)
-        cursor = connection.execute(cmd)
+        self.c.execute("SELECT * FROM people WHERE Id = ?", (Id,))
         profile = None
-        for row in cursor:
+        for row in self.c.fetchall():
             profile = row
-        connection.close()
+            print(row)
         return profile
+
 
 
 
@@ -107,34 +102,47 @@ class FaceDetection(QDialog):
         self.gray = cv2.cvtColor(self.imageDetection, cv2.COLOR_BGR2GRAY)
         self.faces = self.faceCascade.detectMultiScale(self.gray, 1.2, 5)
 
-        ## Detect Faces
+        # Detect Faces
         for (x, y, w, h) in self.faces:
             cv2.rectangle(self.imageDetection, (x, y), (x + w, y + h), (225, 0, 0), 2)
 
-            ## Predict returns an Id and confidence value
-            [Id, conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
+            gray = cv2.cvtColor(self.imageDetection, cv2.COLOR_BGR2GRAY)
+            self.faces = self.faceCascade.detectMultiScale(gray, 1.2, 5)
+            for (x, y, w, h) in self.faces:
+                cv2.rectangle(self.imageDetection, (x, y), (x + w, y + h), (225, 0, 0), 2)
+                [Id, conf] = self.recognizer.predict(gray[y:y + h, x:x + w])
+                if (conf > 50):
+                    if (Id == 1):
+                        Id = "Felipe"
+                    elif (Id == 2):
+                        Id = "Elder Bednar"
+                else:
+                    Id = "Unknown"
+                cv2.putText(self.imageDetection, str(Id), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
 
-            self.profile = self.getProfile(Id)
-            if (self.profile != None and conf > 50):
-                cv2.putText(self.imageDetection, str(self.profile[1]), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
-            else:
-                Id = "Unknown"
-                cv2.putText(self.imageDetectionim, str(Id), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
+                # Predict returns an Id and confidence value
+            #[Id,conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
+
+            #self.profile = self.getProfile(self.idUser)
+            #if (self.profile != None and conf > 50):
+             #   cv2.putText(self.imageDetection, str(self.profile[1]), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
+            #else:
+             #   Id = "Unknown"
+              #  cv2.putText(self.imageDetectionim, str(Id), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
 
 
 
-           ###########################
 
-            if (conf > 50):
-                if (Id == 1):
-                    Id = "Felipe"
-                elif (Id == 2):
-                    Id = "Elder Bednar"
-            else:
-                Id = "Unknown"
-            cv2.putText(self.imageDetection, str(Id), (x, y + h), self.fontface,
-                        self.fontscale, self.fontcolor)
-            #############
+            #if (conf > 50):
+             #   if (Id == 1):
+              #      Id = "Felipe"
+               # elif (Id == 2):
+                #    Id = "Elder Bednar"
+            #else:
+             #   Id = "Unknown"
+            #cv2.putText(self.imageDetection, str(Id), (x, y + h), self.fontface,
+             #           self.fontscale, self.fontcolor)
+
         self.displayVideo(self.imageDetection,1)
 
     def stopCam(self):
