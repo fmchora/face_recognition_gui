@@ -39,24 +39,43 @@ class FaceDetection(QDialog):
         self.startCam()
         self.createTable()
         self.dynamicDataEntry()
+        self.readFromDB()
 
     def createTable(self):
         self.c.execute('CREATE TABLE IF NOT EXISTS people(Id REAL, name TEXT)')
 
 
     def dynamicDataEntry(self):
-        self.userId = 1
+        self.userId = 5
         self.userName = "Felipe"
         self.c.execute("INSERT INTO people (Id,name) VALUES(?,?)", (self.userId, self.userName))
         self.conn.commit()
-        self.c.close()
-        self.conn.close()
+
 
     def readFromDB(self):
+        self.c.execute("SELECT * FROM people Where Id = 0")
+        for row in self.c.fetchall():
+            print(row)
+
+        self.createOrUpdate(10,"Pedro")
 
 
-    def getProfile(Id):
-        pass
+    def createOrUpdate(self,Id,name):
+        self.c.execute("SELECT * FROM people WHERE Id = ?", (Id,))
+        ifRecordExist = False
+        for row in self.c.fetchall():
+            ifRecordExist = True
+        if (ifRecordExist == True):
+            self.c.execute("UPDATE people SET name= ?  WHERE Id = ?", (name,Id))
+        else:
+            self.c.execute("INSERT INTO people (Id,name) Values(?,?)", (Id, name))
+
+        self.conn.commit()
+
+
+    def getProfile(self,Id):
+        self.c.close()
+        self.conn.close()
 
 
 
