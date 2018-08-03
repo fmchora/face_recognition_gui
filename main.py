@@ -97,7 +97,7 @@ class FaceDetection(QDialog):
 
         faces, Ids = self.getImagesAndLabels('dataSet')
         self.recognizer.train(faces, np.array(Ids))
-        self.recognizer.save('trainner/trainner.yml')
+        self.recognizer.write('trainner/trainner.yml')
 
 
     def createTable(self):
