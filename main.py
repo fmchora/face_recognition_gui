@@ -173,7 +173,7 @@ class FaceDetection(QDialog):
                 # Predict returns an Id and confidence value
                 [Id,conf] = self.recognizer.predict(self.gray[y:y + h, x:x + w])
                 self.profile = self.getProfile(Id)
-                if (self.profile != None and conf > 50):
+                if (self.profile != None and conf < 30):
                     cv2.putText(self.imageDetection, str(self.profile[1]), (x, y + h), self.fontface, self.fontscale, self.fontcolor)
                 else:
                      Id = "Unknown"
